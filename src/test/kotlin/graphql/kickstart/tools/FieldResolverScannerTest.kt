@@ -6,6 +6,7 @@ import graphql.kickstart.tools.resolver.FieldResolverScanner
 import graphql.kickstart.tools.resolver.MethodFieldResolver
 import graphql.kickstart.tools.resolver.PropertyFieldResolver
 import graphql.language.FieldDefinition
+import graphql.language.ObjectTypeDefinition
 import graphql.language.TypeName
 import graphql.relay.Connection
 import graphql.relay.DefaultConnection
@@ -21,8 +22,8 @@ class FieldResolverScannerTest {
     fun `scanner finds fields on multiple root types`() {
         val resolver = RootResolverInfo(listOf(RootQuery1(), RootQuery2()), options)
 
-        val result1 = scanner.findFieldResolver(FieldDefinition("field1", TypeName("String")), resolver)
-        val result2 = scanner.findFieldResolver(FieldDefinition("field2", TypeName("String")), resolver)
+        val result1 = scanner.findFieldResolver(FieldDefinition("field1", TypeName("String")), ObjectTypeDefinition("Type"), resolver)
+        val result2 = scanner.findFieldResolver(FieldDefinition("field2", TypeName("String")), ObjectTypeDefinition("Type"), resolver)
 
         assertNotEquals(result1.search.source, result2.search.source)
     }
@@ -31,22 +32,22 @@ class FieldResolverScannerTest {
     fun `scanner throws exception when more than one resolver method is found`() {
         val resolver = RootResolverInfo(listOf(RootQuery1(), DuplicateQuery()), options)
 
-        scanner.findFieldResolver(FieldDefinition("field1", TypeName("String")), resolver)
+        scanner.findFieldResolver(FieldDefinition("field1", TypeName("String")), ObjectTypeDefinition("Type"), resolver)
     }
 
     @Test(expected = FieldResolverError::class)
     fun `scanner throws exception when no resolver methods are found`() {
         val resolver = RootResolverInfo(listOf(), options)
 
-        scanner.findFieldResolver(FieldDefinition("field1", TypeName("String")), resolver)
+        scanner.findFieldResolver(FieldDefinition("field1", TypeName("String")), ObjectTypeDefinition("Type"), resolver)
     }
 
     @Test
     fun `scanner finds properties when no method is found`() {
         val resolver = RootResolverInfo(listOf(PropertyQuery()), options)
 
-        val name = scanner.findFieldResolver(FieldDefinition("name", TypeName("String")), resolver)
-        val version = scanner.findFieldResolver(FieldDefinition("version", TypeName("Integer")), resolver)
+        val name = scanner.findFieldResolver(FieldDefinition("name", TypeName("String")), ObjectTypeDefinition("Type"), resolver)
+        val version = scanner.findFieldResolver(FieldDefinition("version", TypeName("Integer")), ObjectTypeDefinition("Type"), resolver)
 
         assert(name is PropertyFieldResolver)
         assert(version is PropertyFieldResolver)
@@ -56,7 +57,7 @@ class FieldResolverScannerTest {
     fun `scanner finds generic return type`() {
         val resolver = RootResolverInfo(listOf(GenericQuery()), options)
 
-        val users = scanner.findFieldResolver(FieldDefinition("users", TypeName("UserConnection")), resolver)
+        val users = scanner.findFieldResolver(FieldDefinition("users", TypeName("UserConnection")), ObjectTypeDefinition("Type"), resolver)
 
         assert(users is MethodFieldResolver)
     }
@@ -65,7 +66,7 @@ class FieldResolverScannerTest {
     fun `scanner prefers concrete resolver`() {
         val resolver = DataClassResolverInfo(Kayak::class.java)
 
-        val meta = scanner.findFieldResolver(FieldDefinition("information", TypeName("VehicleInformation")), resolver)
+        val meta = scanner.findFieldResolver(FieldDefinition("information", TypeName("VehicleInformation")), ObjectTypeDefinition("Type"), resolver)
 
         assert(meta is MethodFieldResolver)
         assertEquals((meta as MethodFieldResolver).method.returnType, BoatInformation::class.java)
@@ -75,7 +76,7 @@ class FieldResolverScannerTest {
     fun `scanner finds field resolver method using camelCase for snake_cased field_name`() {
         val resolver = RootResolverInfo(listOf(CamelCaseQuery1()), options)
 
-        val meta = scanner.findFieldResolver(FieldDefinition("hull_type", TypeName("HullType")), resolver)
+        val meta = scanner.findFieldResolver(FieldDefinition("hull_type", TypeName("HullType")), ObjectTypeDefinition("Type"), resolver)
 
         assert(meta is MethodFieldResolver)
         assertEquals((meta as MethodFieldResolver).method.returnType, HullType::class.java)

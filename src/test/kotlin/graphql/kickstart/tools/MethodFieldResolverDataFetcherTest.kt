@@ -5,10 +5,7 @@ import graphql.execution.*
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.kickstart.tools.resolver.FieldResolverError
 import graphql.kickstart.tools.resolver.FieldResolverScanner
-import graphql.language.FieldDefinition
-import graphql.language.InputValueDefinition
-import graphql.language.NonNullType
-import graphql.language.TypeName
+import graphql.language.*
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentImpl
@@ -273,12 +270,14 @@ class MethodFieldResolverDataFetcherTest {
             .inputValueDefinitions(arguments)
             .build()
 
+
+
         val resolverInfo = if (resolver is GraphQLQueryResolver) {
             RootResolverInfo(listOf(resolver), options)
         } else {
             NormalResolverInfo(resolver, options)
         }
-        return FieldResolverScanner(options).findFieldResolver(field, resolverInfo).createDataFetcher()
+        return FieldResolverScanner(options).findFieldResolver(field, ObjectTypeDefinition("Type"), resolverInfo).createDataFetcher()
     }
 
     private fun createEnvironment(source: Any = Object(), arguments: Map<String, Any> = emptyMap(), context: Any? = null): DataFetchingEnvironment {

@@ -6,6 +6,7 @@ import graphql.kickstart.tools.RootResolverInfo
 import graphql.kickstart.tools.SchemaParserOptions
 import graphql.kickstart.tools.util.*
 import graphql.language.FieldDefinition
+import graphql.language.ObjectTypeDefinition
 import graphql.language.TypeName
 import graphql.schema.DataFetchingEnvironment
 import org.apache.commons.lang3.ClassUtils
@@ -27,7 +28,7 @@ internal class FieldResolverScanner(val options: SchemaParserOptions) {
 
     private val allowedLastArgumentTypes = listOfNotNull(DataFetchingEnvironment::class.java, options.contextClass)
 
-    fun findFieldResolver(field: FieldDefinition, resolverInfo: ResolverInfo): FieldResolver {
+    fun findFieldResolver(field: FieldDefinition, objectType: ObjectTypeDefinition, resolverInfo: ResolverInfo): FieldResolver {
         val searches = resolverInfo.getFieldSearches()
 
         val scanProperties = field.inputValueDefinitions.isEmpty()
@@ -37,7 +38,7 @@ internal class FieldResolverScanner(val options: SchemaParserOptions) {
             throw FieldResolverError("Found more than one matching resolver for field '$field': $found")
         }
 
-        return found.firstOrNull() ?: missingFieldResolver(field, searches, scanProperties)
+        return found.firstOrNull() ?: missingFieldResolver(field, objectType, searches, scanProperties)
     }
 
     private fun findFieldResolver(field: FieldDefinition, search: Search, scanProperties: Boolean): FieldResolver? {
@@ -60,13 +61,13 @@ internal class FieldResolverScanner(val options: SchemaParserOptions) {
         return null
     }
 
-    private fun missingFieldResolver(field: FieldDefinition, searches: List<Search>, scanProperties: Boolean): FieldResolver {
+    private fun missingFieldResolver(field: FieldDefinition, objectType: ObjectTypeDefinition, searches: List<Search>, scanProperties: Boolean): FieldResolver {
         return if (options.allowUnimplementedResolvers || options.missingResolverDataFetcher != null) {
             if (options.allowUnimplementedResolvers) {
                 log.warn("Missing resolver for field: $field")
             }
 
-            MissingFieldResolver(field, options)
+            MissingFieldResolver(field, objectType, options)
         } else {
             throw FieldResolverError(getMissingFieldMessage(field, searches, scanProperties))
         }

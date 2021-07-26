@@ -2,6 +2,8 @@ package graphql.kickstart.tools
 
 import graphql.GraphQL
 import graphql.kickstart.tools.resolver.FieldResolverError
+import graphql.language.FieldDefinition
+import graphql.language.ObjectTypeDefinition
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import org.junit.Test
@@ -60,6 +62,51 @@ class MissingFieldResolverTest {
         val expected = mapOf(
             "implementedField" to "Optional[test-value]",
             "missingField" to 1
+        )
+
+        assertEquals(result.getData(), expected)
+    }
+
+    @Test
+    fun `should call missing resolver data fetcher if provided via handler`() {
+        val schema = SchemaParser.newParser()
+                .schemaString(
+                        """
+                type Query {
+                    implementedField(input: String): String
+                    missingField(input: Int): Int
+                }
+                """
+                )
+                .resolvers(object : GraphQLQueryResolver {
+                    fun implementedField(input: Optional<String>) = input.toString()
+                })
+                .options(SchemaParserOptions.newOptions()
+                        .missingResolverHandler(object : MissingFieldResolverHandler {
+                            override fun handle(field: FieldDefinition,
+                                                type: ObjectTypeDefinition,
+                                                options: SchemaParserOptions): DataFetcher<Any?> {
+                                return TestMissingResolverDataFetcher()
+                            }
+                        })
+                        .missingResolverDataFetcher(TestMissingResolverDataFetcher())
+                        .build())
+                .build()
+                .makeExecutableSchema()
+
+        val gql = GraphQL.newGraphQL(schema).build()
+
+        val result = gql.execute(
+                """
+            query {
+                implementedField(input: "test-value")
+                missingField(input: 1)
+            }
+            """)
+
+        val expected = mapOf(
+                "implementedField" to "Optional[test-value]",
+                "missingField" to 1
         )
 
         assertEquals(result.getData(), expected)

@@ -51,7 +51,7 @@ class TypeClassMatcherTest {
         private val resolver = RootResolverInfo(listOf(QueryMethods()), options)
 
         private fun createPotentialMatch(methodName: String, graphQLType: Type<*>): TypeClassMatcher.PotentialMatch {
-            return scanner.findFieldResolver(FieldDefinition(methodName, graphQLType), resolver)
+            return scanner.findFieldResolver(FieldDefinition(methodName, graphQLType), ObjectTypeDefinition("Type"), resolver)
                 .scanForMatches()
                 .find { it.location == TypeClassMatcher.Location.RETURN_TYPE }!!
         }

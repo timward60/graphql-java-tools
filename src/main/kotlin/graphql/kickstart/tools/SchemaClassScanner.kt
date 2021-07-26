@@ -266,7 +266,7 @@ internal class SchemaClassScanner(
 
     private fun scanResolverInfoForPotentialMatches(type: ObjectTypeDefinition, resolverInfo: ResolverInfo) {
         type.getExtendedFieldDefinitions(extensionDefinitions).forEach { field ->
-            val fieldResolver = fieldResolverScanner.findFieldResolver(field, resolverInfo)
+            val fieldResolver = fieldResolverScanner.findFieldResolver(field, type, resolverInfo)
 
             fieldResolversByType.getOrPut(type) { mutableMapOf() }[fieldResolver.field] = fieldResolver
 
